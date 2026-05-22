@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>DIAN Study PRO · Gestor 1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b1020">
+  <meta name="theme-color" content="#050b16">
   <meta name="description" content="DIAN Study PRO · Gestor 1 — PWA de estudio en audio para el concurso DIAN (Gestor 1 de Talento Humano).">
 
   <link rel="manifest" href="./manifest.json">
@@ -18,14 +18,13 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+
+  <!-- HEADER -->
   <header class="app-header">
     <div class="header-inner">
       <div class="brand">
         <div class="brand-logo">
-          <!-- usa tu icon-192 como favicon, esto es solo decorativo -->
-          <div class="brand-logo-circle">
-            <span>DI</span>
-          </div>
+          <div class="brand-logo-circle"><span>DI</span></div>
         </div>
         <div class="brand-text">
           <span class="brand-sub">Estudio concurso DIAN</span>
@@ -34,6 +33,7 @@
       </div>
 
       <div class="header-actions">
+        <!-- Sleep timer -->
         <div class="sleep-wrapper">
           <button id="sleepBtn" class="icon-btn" aria-label="Temporizador de sueño">
             <span class="sleep-badge" id="sleepBadge" hidden></span>
@@ -51,6 +51,7 @@
           </div>
         </div>
 
+        <!-- Theme toggle -->
         <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">
           <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="currentColor" d="M20.1 14.6A7.5 7.5 0 0 1 9.4 3.9a7.7 7.7 0 1 0 10.7 10.7z"/>
@@ -59,11 +60,22 @@
             <path fill="currentColor" d="M12 4.5a1 1 0 0 1-1-1V2a1 1 0 1 1 2 0v1.5a1 1 0 0 1-1 1zm0 17.5a1 1 0 0 1-1-1V19a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1zM4.5 13H3a1 1 0 1 1 0-2h1.5a1 1 0 0 1 0 2zm17 0H20a1 1 0 0 1 0-2h1.5a1 1 0 1 1 0 2zM6.3 6.3a1 1 0 0 1-1.4-1.4L6 3.8a1 1 0 1 1 1.4 1.4L6.3 6.3zm11.4 11.4a1 1 0 0 1-1.4-1.4l1.1-1.1a1 1 0 1 1 1.4 1.4l-1.1 1.1zM6.3 17.7 5.2 18.8a1 1 0 1 1-1.4-1.4l1.1-1.1a1 1 0 1 1 1.4 1.4zm11.4-11.4L18.8 5.2a1 1 0 0 1 1.4 1.4L19.1 7.7a1 1 0 0 1-1.4-1.4zM12 7a5 5 0 1 1 0 10A5 5 0 0 1 12 7z"/>
           </svg>
         </button>
+
+        <!-- Install button (header, visible solo cuando hay prompt disponible) -->
+        <button id="installHeaderBtn" class="icon-btn install-header-btn" aria-label="Instalar app" hidden title="Instalar app">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
       </div>
     </div>
   </header>
 
+  <!-- MAIN -->
   <main class="app-main">
+
     <!-- CONTINUAR -->
     <section id="continueBanner" class="continue-banner" hidden>
       <div class="continue-info">
@@ -80,7 +92,9 @@
     <section class="global-progress-section">
       <div class="progress-header">
         <div class="progress-label">Progreso del curso</div>
-        <div class="progress-count"><span id="completedCount">0</span> / <span id="totalEpisodes">0</span> episodios</div>
+        <div class="progress-count">
+          <span id="completedCount">0</span> / <span id="totalEpisodes">0</span> episodios
+        </div>
       </div>
       <div class="global-progress-bar">
         <div id="globalProgressFill" class="global-progress-fill"></div>
@@ -106,18 +120,15 @@
         <h1 class="episodes-title">Audios para examen DIAN · Gestor 1</h1>
         <p class="episodes-subtitle">Reproduce, pausa y retoma tu avance en cada eje de estudio.</p>
       </div>
-      <div id="episodesList" class="episodes-list">
-        <!-- cards via JS -->
-      </div>
+      <div id="episodesList" class="episodes-list"></div>
     </section>
+
   </main>
 
-  <!-- MINI PLAYER -->
+  <!-- MINI PLAYER (fijo en bottom, siempre visible cuando hay episodio) -->
   <section id="miniPlayer" class="mini-player" hidden aria-label="Reproductor mini">
-    <button id="miniLeft" class="mini-left">
-      <div class="mini-art">
-        <div class="mini-disc"></div>
-      </div>
+    <button id="miniLeft" class="mini-left" aria-label="Abrir reproductor completo">
+      <div class="mini-art"><div class="mini-disc"></div></div>
       <div class="mini-meta">
         <div id="miniTitle" class="mini-title">Selecciona un episodio</div>
         <div id="miniSub" class="mini-sub">DIAN Study PRO</div>
@@ -127,26 +138,41 @@
       </div>
     </button>
     <button id="miniPlay" class="mini-play" aria-label="Reproducir o pausar">
-      ▶
+      <svg class="icon-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <svg class="icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" hidden><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
     </button>
   </section>
 
-  <!-- FULL PLAYER -->
+  <!-- FULL PLAYER (pantalla completa) -->
   <section id="fullPlayer" class="full-player" hidden aria-label="Reproductor principal">
-    <button id="playerClose" class="player-close" aria-label="Cerrar reproductor">✕</button>
+
+    <!-- Botón cerrar: SIEMPRE visible, bien grande, arriba -->
+    <div class="player-topbar">
+      <button id="playerClose" class="player-close-btn" aria-label="Cerrar reproductor y volver a la lista">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+        <span>Volver</span>
+      </button>
+      <span class="player-topbar-label">Reproduciendo</span>
+      <div style="width:80px"></div><!-- spacer -->
+    </div>
+
     <div class="full-player-inner">
+      <!-- Arte -->
       <div class="full-player-art">
-        <div id="artDisc" class="art-disc">
-          <span>DIAN</span>
-        </div>
+        <div id="artDisc" class="art-disc"><span>DIAN</span></div>
       </div>
+
+      <!-- Meta -->
       <div class="full-player-meta">
         <div id="fpEje" class="fp-eje">Eje</div>
         <h2 id="fpTitle" class="fp-title">Selecciona un episodio</h2>
         <p id="fpSub" class="fp-sub">Subtítulo</p>
-        <p id="fpFoco" class="fp-foco">Aquí verás el foco del episodio y su utilidad para el Gestor 1.</p>
+        <p id="fpFoco" class="fp-foco">Aquí verás el foco del episodio.</p>
       </div>
 
+      <!-- Seekbar -->
       <div class="seekbar-wrapper">
         <div class="seekbar-container">
           <input id="seekbar" type="range" min="0" max="100" value="0" class="seekbar" aria-label="Progreso del episodio">
@@ -158,18 +184,44 @@
         </div>
       </div>
 
+      <!-- Controles -->
       <div class="player-controls">
-        <button id="skipBack" class="ctrl-btn" aria-label="Retroceder 10 segundos">−10</button>
-        <button id="playPauseBtn" class="ctrl-btn ctrl-main" aria-label="Reproducir o pausar">▶</button>
-        <button id="skipFwd" class="ctrl-btn" aria-label="Avanzar 10 segundos">+10</button>
+        <button id="skipBack" class="ctrl-btn" aria-label="Retroceder 15 segundos">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+          <span class="skip-label">15</span>
+        </button>
+        <button id="playPauseBtn" class="ctrl-btn ctrl-main" aria-label="Reproducir o pausar">
+          <svg class="icon-play" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg class="icon-pause" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" hidden><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        </button>
+        <button id="skipFwd" class="ctrl-btn" aria-label="Avanzar 30 segundos">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-3.51"/></svg>
+          <span class="skip-label">30</span>
+        </button>
       </div>
 
+      <!-- Footer: velocidad + instalar -->
       <div class="player-footer">
         <button id="speedBtn" class="chip-btn">1× velocidad</button>
-        <button id="installBtn" class="chip-btn chip-primary">Instalar PWA</button>
+        <!-- Botón instalar PWA con UX real -->
+        <button id="installBtn" class="chip-btn chip-primary" aria-label="Instalar aplicación">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Instalar app
+        </button>
       </div>
     </div>
   </section>
+
+  <!-- MODAL instrucciones instalación (fallback sin beforeinstallprompt) -->
+  <div id="installModal" class="install-modal" hidden role="dialog" aria-modal="true" aria-labelledby="installModalTitle">
+    <div class="install-modal-card">
+      <button id="installModalClose" class="install-modal-close" aria-label="Cerrar">✕</button>
+      <div class="install-modal-icon">📲</div>
+      <h3 id="installModalTitle" class="install-modal-title">Instalar DIAN Study PRO</h3>
+      <div id="installModalBody" class="install-modal-body"></div>
+    </div>
+  </div>
+  <div id="installModalBackdrop" class="install-modal-backdrop" hidden></div>
 
   <audio id="audioPlayer" preload="metadata"></audio>
   <script src="./script.js"></script>

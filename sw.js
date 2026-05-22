@@ -1,12 +1,11 @@
 /* ═══════════════════════════════════════════════════════════
-DIAN STUDY PRO — sw.js
-Service Worker — cache-first para assets estáticos
-Audios NO se cachean (por tamaño)
-═══════════════════════════════════════════════════════════ */
+   DIAN STUDY PRO — sw.js  (corregido)
+   cache-first para assets. Audios siempre desde la red.
+   ═══════════════════════════════════════════════════════════ */
 
 'use strict';
 
-const CACHE_NAME = 'dian-study-v1';
+const CACHE_NAME = 'dian-study-v2';   // ← incrementado para forzar actualización
 
 const urlsToCache = [
   './',
@@ -21,36 +20,41 @@ const urlsToCache = [
 /* INSTALL */
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-/* ACTIVATE */
+/* ACTIVATE — limpiar caches viejos */
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames =>
+    caches.keys().then(names =>
       Promise.all(
-        cacheNames
-          .filter(name => name !== CACHE_NAME)
-          .map(name => caches.delete(name))
+        names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))
       )
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 /* FETCH */
 self.addEventListener('fetch', event => {
+  // Solo manejar GET
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
 
-  // Audios: siempre desde la red
+  // Audios: siempre red (no cachear)
   if (url.pathname.includes('/audios/') || url.pathname.endsWith('.m4a')) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        new Response('Audio no disponible offline', { status: 503 })
+      )
+    );
     return;
   }
 
-  // Fonts externas
+  // Google Fonts: red primero, sin cachear
   if (url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com') {
     event.respondWith(
       fetch(event.request).catch(() => new Response('', { status: 408 }))
@@ -58,7 +62,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Resto: cache-first
+  // Todo lo demás: cache-first
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
@@ -71,6 +75,7 @@ self.addEventListener('fetch', event => {
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
       }).catch(() => {
+        // Fallback offline: devolver shell para navegación
         if (event.request.mode === 'navigate') {
           return caches.match('./index.html');
         }
