@@ -279,7 +279,7 @@ function renderEpisodes() {
         <div class="ep-title">${ep.title}</div>
         <div class="ep-sub">${ep.subtitulo}</div>
         <div class="ep-foco">${ep.foco}</div>
-        <button class="btn-download" onclick="event.stopPropagation(); downloadAudio('${ep.file}')">
+        <button class="btn-download" onclick="downloadAudio(event, '${ep.file}', this)">
            📥 Descargar
         </button>
       </div>
@@ -695,19 +695,51 @@ function formatTime(s) {
 /* ─── START ───────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', init);
 
-// Función para descargar un audio manualmente
-async function downloadAudio(audioFile) {
+// Función para descargar un audio manualmente (Mejorada)
+async function downloadAudio(event, audioFile, btnElement) {
+  // 1. Evitamos que el clic abra también el reproductor
+  event.stopPropagation();
+
   if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
-    alert("Tu navegador no soporta descargas offline.");
+    alert("Tu navegador aún no está listo para descargas offline o estás en modo incógnito. Recarga la página e intenta de nuevo.");
     return;
   }
 
+  // 2. Guardamos el texto original y mostramos estado de carga
+  const originalText = btnElement.innerHTML;
+  btnElement.innerHTML = '⏳ Descargando...';
+  btnElement.disabled = true; // Desactivar botón para evitar dobles clics
+  btnElement.style.opacity = '0.7';
+
   try {
-    const cache = await caches.open('dian-study-v3'); // Usa la nueva versión
+    const cache = await caches.open('dian-study-v3'); 
+    
+    // 3. Verificamos si ya está descargado para no gastar datos a lo loco
+    const existingResponse = await cache.match(audioFile);
+    if (existingResponse) {
+      btnElement.innerHTML = '✅ Descargado';
+      return; 
+    }
+
+    // 4. Descargamos el archivo
     const response = await fetch(audioFile);
+    
+    if (!response.ok) throw new Error("Error en la red al descargar");
+
+    // 5. Lo guardamos en la caché
     await cache.put(audioFile, response);
-    alert("¡Audio descargado con éxito! Ya puedes escucharlo sin internet.");
+    
+    // 6. Éxito visual
+    btnElement.innerHTML = '✅ Descargado';
+    btnElement.style.opacity = '1';
+    
   } catch (err) {
-    alert("Error al descargar el audio. Revisa tu conexión.");
+    console.error("Error en la descarga:", err);
+    alert("Error al descargar el audio. Revisa tu conexión a internet.");
+    
+    // Restauramos el botón si falla
+    btnElement.innerHTML = originalText;
+    btnElement.disabled = false;
+    btnElement.style.opacity = '1';
   }
 }
