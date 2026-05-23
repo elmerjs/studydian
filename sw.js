@@ -5,7 +5,7 @@
 
 'use strict';
 
-const CACHE_NAME = 'dian-study-v3';
+const CACHE_NAME = 'dian-study-v5';
 
 const urlsToCache = [
   './index.html',
@@ -43,11 +43,31 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
   // Audios: siempre red (no cachear)
+  // Audios: Cache-first dinámico (se guardan a medida que se escuchan)
   if (url.pathname.includes('/audios/') || url.pathname.endsWith('.m4a')) {
     event.respondWith(
-      fetch(event.request).catch(() =>
-        new Response('Audio no disponible offline', { status: 503 })
-      )
+      caches.match(event.request).then(cachedResponse => {
+        // 1. Si ya está en caché (porque lo escuchó antes), lo devuelve rápido
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        
+        // 2. Si no está en caché, lo pide a internet
+        return fetch(event.request).then(networkResponse => {
+          // Si la respuesta es válida, clonamos y guardamos en caché para el futuro
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          // Devolvemos el audio para que el usuario lo escuche ahora
+          return networkResponse;
+        }).catch(() => {
+          // Si no hay internet y no está en caché
+          return new Response('Audio no disponible offline. Necesitas escucharlo al menos una vez con conexión.', { status: 503 });
+        });
+      })
     );
     return;
   }
