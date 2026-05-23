@@ -1,19 +1,18 @@
 /* ═══════════════════════════════════════════════════════════
-   DIAN STUDY PRO — sw.js  (corregido v2)
-   cache-first para assets. Audios siempre desde la red.
+   DIAN STUDY PRO — sw.js (Configurado para descargas manuales)
    ═══════════════════════════════════════════════════════════ */
 
 'use strict';
 
-const CACHE_NAME = 'dian-study-v2';
+const CACHE_NAME = 'dian-study-v3'; // Incrementa la versión para forzar actualización
 
 const urlsToCache = [
   './index.html',
   './styles.css',
   './script.js',
   './manifest.json',
-  './icons/icon-192.png',   // ← ruta corregida
-  './icons/icon-512.png',   // ← ruta corregida
+  './icons/icon-192.png',
+  './icons/icon-512.png',
 ];
 
 /* INSTALL */
@@ -42,21 +41,25 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(event.request.url);
 
-  // Audios: siempre red (no cachear)
+  // MODIFICACIÓN PARA AUDIOS:
+  // Si es un audio, buscamos primero en la caché (Cache-First).
+  // Si no está, lo traemos de la red.
   if (url.pathname.includes('/audios/') || url.pathname.endsWith('.m4a')) {
     event.respondWith(
-      fetch(event.request).catch(() =>
-        new Response('Audio no disponible offline', { status: 503 })
-      )
+      caches.match(event.request).then(cachedResponse => {
+        return cachedResponse || fetch(event.request).then(networkResponse => {
+          // Nota: No guardamos automáticamente aquí para no saturar 
+          // la caché, solo se guardarán los que el usuario descargue manualmente.
+          return networkResponse;
+        });
+      })
     );
     return;
   }
 
-  // Google Fonts: red primero, sin cachear
+  // Google Fonts: red primero
   if (url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com') {
-    event.respondWith(
-      fetch(event.request).catch(() => new Response('', { status: 408 }))
-    );
+    event.respondWith(fetch(event.request).catch(() => new Response('', { status: 408 })));
     return;
   }
 
@@ -72,11 +75,6 @@ self.addEventListener('fetch', event => {
         const clone = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
-      }).catch(() => {
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-        return new Response('', { status: 408, statusText: 'Offline' });
       });
     })
   );

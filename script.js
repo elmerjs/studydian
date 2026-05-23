@@ -279,6 +279,9 @@ function renderEpisodes() {
         <div class="ep-title">${ep.title}</div>
         <div class="ep-sub">${ep.subtitulo}</div>
         <div class="ep-foco">${ep.foco}</div>
+        <button class="btn-download" onclick="event.stopPropagation(); downloadAudio('${ep.file}')">
+           📥 Descargar
+        </button>
       </div>
       <div class="ep-right">
         <div class="ep-duration">${ep.duration}</div>
@@ -691,3 +694,20 @@ function formatTime(s) {
 
 /* ─── START ───────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', init);
+
+// Función para descargar un audio manualmente
+async function downloadAudio(audioFile) {
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+    alert("Tu navegador no soporta descargas offline.");
+    return;
+  }
+
+  try {
+    const cache = await caches.open('dian-study-v3'); // Usa la nueva versión
+    const response = await fetch(audioFile);
+    await cache.put(audioFile, response);
+    alert("¡Audio descargado con éxito! Ya puedes escucharlo sin internet.");
+  } catch (err) {
+    alert("Error al descargar el audio. Revisa tu conexión.");
+  }
+}
