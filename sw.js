@@ -1,20 +1,19 @@
 /* ═══════════════════════════════════════════════════════════
-   DIAN STUDY PRO — sw.js  (corregido)
+   DIAN STUDY PRO — sw.js  (corregido v2)
    cache-first para assets. Audios siempre desde la red.
    ═══════════════════════════════════════════════════════════ */
 
 'use strict';
 
-const CACHE_NAME = 'dian-study-v2';   // ← incrementado para forzar actualización
+const CACHE_NAME = 'dian-study-v2';
 
 const urlsToCache = [
-  './',
   './index.html',
   './styles.css',
   './script.js',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
+  './icons/icon-192.png',   // ← ruta corregida
+  './icons/icon-512.png',   // ← ruta corregida
 ];
 
 /* INSTALL */
@@ -39,7 +38,6 @@ self.addEventListener('activate', event => {
 
 /* FETCH */
 self.addEventListener('fetch', event => {
-  // Solo manejar GET
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
@@ -75,7 +73,6 @@ self.addEventListener('fetch', event => {
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
       }).catch(() => {
-        // Fallback offline: devolver shell para navegación
         if (event.request.mode === 'navigate') {
           return caches.match('./index.html');
         }

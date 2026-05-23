@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   DIAN STUDY PRO — script.js  (corregido)
+   DIAN STUDY PRO — script.js  (corregido v2)
    Reproductor de podcasts — Concurso DIAN Gestor 1
    ═══════════════════════════════════════════════════════════ */
 
@@ -343,7 +343,6 @@ function openEpisode(id) {
 
   // Si cambia de episodio, restablecer posición
   if (srcChanged && position > 5) {
-    // Esperar a que el audio esté listo antes de hacer seek
     audio.addEventListener('loadedmetadata', function onMeta() {
       audio.currentTime = Math.min(position, audio.duration - 1 || position);
       audio.removeEventListener('loadedmetadata', onMeta);
@@ -363,7 +362,6 @@ function openFullPlayer() {
 function closeFullPlayer() {
   fullPlayer.hidden = true;
   document.body.style.overflow = '';
-  // Mini player sigue visible y el audio sigue corriendo
 }
 
 /* ─── META ────────────────────────────────────────────────── */
@@ -435,17 +433,14 @@ audio.addEventListener('timeupdate', () => {
   currentTimeEl.textContent      = formatTime(audio.currentTime);
   totalTimeEl.textContent        = formatTime(audio.duration);
 
-  // Guardar cada ~5 s para no saturar
   if (Math.floor(audio.currentTime) % 5 === 0) {
     saveProgress(state.currentId, audio.currentTime);
     saveLastPlayed(state.currentId, audio.currentTime);
     updateGlobalProgress();
-    // Actualizar mini-barra en tarjeta
     const fill = episodesList.querySelector(`[data-id="${state.currentId}"] .ep-progress-fill`);
     if (fill) fill.style.width = `${pct}%`;
   }
 
-  // Sleep timer check
   if (state.sleepEndsAt && Date.now() >= state.sleepEndsAt) {
     pauseAudio();
     clearSleepTimer();
@@ -506,13 +501,16 @@ miniLeft.addEventListener('click', () => {
 /* ─── CLOSE FULL PLAYER ───────────────────────────────────── */
 playerClose.addEventListener('click', closeFullPlayer);
 
-// Swipe-down para cerrar en móvil
+// Swipe-down
 let touchStartY = 0;
 fullPlayer.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
 fullPlayer.addEventListener('touchend', e => {
   const delta = e.changedTouches[0].clientY - touchStartY;
-  if (delta > 80) closeFullPlayer(); // swipe hacia abajo > 80px cierra
+  if (delta > 80) closeFullPlayer();
 }, { passive: true });
+
+/* ─── ▶️ AGREGADO: listener para el botón play/pause del reproductor grande */
+playPauseBtn.addEventListener('click', togglePlay);
 
 /* ─── SLEEP TIMER ─────────────────────────────────────────── */
 sleepBtn.addEventListener('click', e => {
@@ -547,7 +545,6 @@ function clearSleepTimer() {
   sleepBadge.hidden  = true;
 }
 
-// Cerrar sleep menu al hacer click fuera
 document.addEventListener('click', e => {
   if (!sleepMenu.hidden && !sleepBtn.contains(e.target) && !sleepMenu.contains(e.target)) {
     sleepMenu.hidden = true;
@@ -555,18 +552,13 @@ document.addEventListener('click', e => {
 });
 
 /* ═══════════════════════════════════════════════════════════
-   INSTALACIÓN PWA  (lógica completa)
+   INSTALACIÓN PWA
    ═══════════════════════════════════════════════════════════ */
 function setupInstallPWA() {
-  // 1. Capturar el evento beforeinstallprompt
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredInstallPrompt = e;
-
-    // Mostrar botón en el header (siempre accesible)
     installHeaderBtn.hidden = false;
-
-    // Cambiar texto del botón en el player
     installBtn.innerHTML = `
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -577,25 +569,21 @@ function setupInstallPWA() {
     `;
   });
 
-  // 2. Cuando ya está instalada
   window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null;
     installBtn.hidden        = true;
     installHeaderBtn.hidden  = true;
   });
 
-  // 3. Listeners de los botones de instalar
   [installBtn, installHeaderBtn].forEach(btn => {
     btn.addEventListener('click', handleInstallClick);
   });
 
-  // 4. Cerrar modal
   installModalClose.addEventListener('click', closeInstallModal);
   installModalBack.addEventListener('click', closeInstallModal);
 }
 
 async function handleInstallClick() {
-  // Caso A: tenemos el prompt nativo
   if (deferredInstallPrompt) {
     deferredInstallPrompt.prompt();
     const { outcome } = await deferredInstallPrompt.userChoice;
@@ -607,54 +595,39 @@ async function handleInstallClick() {
     return;
   }
 
-  // Caso B: ya está instalada como PWA
   if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
-    showInstallModal(
-      '✅ Ya instalada',
-      '<p>La aplicación ya está instalada en tu dispositivo. Búscala en tu pantalla de inicio.</p>'
-    );
+    showInstallModal('✅ Ya instalada', '<p>La aplicación ya está instalada en tu dispositivo.</p>');
     return;
   }
 
-  // Caso C: iOS Safari
   const isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   if (isIOS) {
-    showInstallModal(
-      'Instalar en iPhone / iPad',
-      `<ol>
-        <li>Toca el botón <strong>Compartir</strong> <span style="font-size:1.2em">⎙</span> en la barra inferior de Safari.</li>
-        <li>Desplázate y selecciona <strong>"Añadir a pantalla de inicio"</strong>.</li>
-        <li>Toca <strong>"Añadir"</strong> en la esquina superior derecha.</li>
+    showInstallModal('Instalar en iPhone / iPad', `
+      <ol>
+        <li>Toca <strong>Compartir</strong> <span style="font-size:1.2em">⎙</span> en Safari.</li>
+        <li>Selecciona <strong>"Añadir a pantalla de inicio"</strong>.</li>
+        <li>Toca <strong>"Añadir"</strong>.</li>
       </ol>
-      <p style="margin-top:12px;font-size:.8rem;color:var(--txt-3)">Solo funciona en Safari. Si estás en Chrome/Firefox en iOS, abre esta página en Safari primero.</p>`
-    );
+      <p style="margin-top:12px;font-size:.8rem;">Solo funciona en Safari. Si estás en otro navegador, abre esta página en Safari primero.</p>`);
     return;
   }
 
-  // Caso D: Android Chrome sin prompt (quizá ya rechazó antes)
   const isAndroid = /Android/.test(navigator.userAgent);
   if (isAndroid) {
-    showInstallModal(
-      'Instalar en Android',
-      `<ol>
-        <li>Toca el menú <strong>⋮</strong> (tres puntos) en la esquina superior derecha de Chrome.</li>
+    showInstallModal('Instalar en Android', `
+      <ol>
+        <li>Toca el menú <strong>⋮</strong> en Chrome.</li>
         <li>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Añadir a pantalla de inicio"</strong>.</li>
         <li>Confirma tocando <strong>"Instalar"</strong>.</li>
-      </ol>
-      <p style="margin-top:12px;font-size:.8rem;color:var(--txt-3)">Si no ves la opción, es posible que ya hayas rechazado la instalación. Borra los datos del sitio en Ajustes de Chrome e inténtalo de nuevo.</p>`
-    );
+      </ol>`);
     return;
   }
 
-  // Caso E: escritorio Chrome/Edge
-  showInstallModal(
-    'Instalar en tu computador',
-    `<ol>
-      <li>En Chrome: haz clic en el ícono <strong>⊕</strong> o <strong>⬇</strong> que aparece al final de la barra de direcciones.</li>
-      <li>En Edge: haz clic en el ícono de la barra de herramientas o en <strong>⋯ → Aplicaciones → Instalar este sitio</strong>.</li>
-    </ol>`
-  );
+  showInstallModal('Instalar en tu computador', `
+    <ol>
+      <li>En Chrome: haz clic en el ícono <strong>⊕</strong> en la barra de direcciones.</li>
+      <li>En Edge: <strong>⋯ → Aplicaciones → Instalar este sitio</strong>.</li>
+    </ol>`);
 }
 
 function showInstallModal(title, bodyHtml) {
@@ -672,7 +645,7 @@ function closeInstallModal() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   TABS / THEME / CONTINUE / KEYBOARD
+   BIND EVENTS
    ═══════════════════════════════════════════════════════════ */
 function bindEvents() {
   themeToggle.addEventListener('click', toggleTheme);
